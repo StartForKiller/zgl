@@ -5,7 +5,7 @@ pkgs:
     license: MIT
     source_url: "https://github.com/ziglibs/zgl"
 
-    root: zgl.zig
+    root: src/zgl.zig
     files:
       README.md
       LICENSE

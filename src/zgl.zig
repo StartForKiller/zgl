@@ -1,5 +1,5 @@
 const std = @import("std");
-pub const binding = @import("binding.zig");
+pub const binding = @import("binding");
 
 comptime {
     std.testing.refAllDecls(@This());
@@ -2434,10 +2434,10 @@ pub const Parameter = enum(types.Enum) {
     blend_src_alpha = binding.BLEND_SRC_ALPHA,
     blend_src_rgb = binding.BLEND_SRC_RGB,
     color_clear_value = binding.COLOR_CLEAR_VALUE,
-    color_logic_op = binding.COLOR_LOGIC_OP,
+    // color_logic_op = binding.COLOR_LOGIC_OP,
     color_writemask = binding.COLOR_WRITEMASK,
     compressed_texture_formats = binding.COMPRESSED_TEXTURE_FORMATS,
-    context_flags = binding.CONTEXT_FLAGS,
+    // context_flags = binding.CONTEXT_FLAGS,
     cull_face = binding.CULL_FACE,
     current_program = binding.CURRENT_PROGRAM,
     depth_clear_value = binding.DEPTH_CLEAR_VALUE,
@@ -2508,7 +2508,7 @@ pub const Parameter = enum(types.Enum) {
     max_uniform_block_size = binding.MAX_UNIFORM_BLOCK_SIZE,
     max_uniform_buffer_bindings = binding.MAX_UNIFORM_BUFFER_BINDINGS,
     max_varying_components = binding.MAX_VARYING_COMPONENTS,
-    // max_varying_floats = binding.MAX_VARYING_FLOATS,
+    max_varying_floats = binding.MAX_VARYING_FLOATS,
     max_vertex_attribs = binding.MAX_VERTEX_ATTRIBS,
     max_vertex_output_components = binding.MAX_VERTEX_OUTPUT_COMPONENTS,
     max_vertex_texture_image_units = binding.MAX_VERTEX_TEXTURE_IMAGE_UNITS,
