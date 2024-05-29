@@ -14,6 +14,27 @@ var vertex_buffer = gl.Buffer.create();
 defer vertex_buffer.delete();
 ```
 
+## Installation
+
+Add zgl to your `build.zig.zon` with the following command:
+
+`zig fetch --save 'git+https://codeberg.org/joshua-software-dev/zgl.git#[commit_hash]'`
+
+Replace [commit_hash] with the latest commit or tagged release.
+
+Then add the following to your `build.zig`:
+
+```zig
+const zgl = b.dependency("zgl", .{
+    .target = target,
+    .optimize = optimize,
+    .binding_version = @as([]const u8, "GL_VERSION_4_6"),
+});
+exe.root_module.addImport("zgl", zgl.module("zgl"));
+```
+
+Then import it with `const gl = @import("zgl");`, and build as normal with `zig build`.
+
 ## Development Philosophy
 
 This library is developed incrementally. That means that functions and other things will be included on-demand and not just for the sake of completeness.
@@ -28,6 +49,32 @@ This library includes bindings for OpenGL 1.0 through 4.6, as well as OpenGL ES 
 const zgl_dep = b.dependency("zgl", .{
     .target = target,
     .optimize = optimize,
-    .binding_version = @as([]const u8, "VERSION_4_1"), // for ES versions, use "ES_VERSION_2_0"
+    .binding_version = @as([]const u8, "VERSION_4_1"),
 });
 ```
+
+You can specify any OpenGL binding version from the following list:
+- `GL_VERSION_1_0`
+- `GL_VERSION_1_1`
+- `GL_VERSION_1_2`
+- `GL_VERSION_1_3`
+- `GL_VERSION_1_4`
+- `GL_VERSION_1_5`
+- `GL_VERSION_2_0`
+- `GL_VERSION_2_1`
+- `GL_VERSION_3_0`
+- `GL_VERSION_3_1`
+- `GL_VERSION_3_2`
+- `GL_VERSION_3_3`
+- `GL_VERSION_4_0`
+- `GL_VERSION_4_1`
+- `GL_VERSION_4_2`
+- `GL_VERSION_4_3`
+- `GL_VERSION_4_4`
+- `GL_VERSION_4_5`
+- `GL_VERSION_4_6`
+- `GL_ES_VERSION_1_0`
+- `GL_ES_VERSION_2_0`
+- `GL_ES_VERSION_3_0`
+- `GL_ES_VERSION_3_1`
+- `GL_ES_VERSION_3_2`

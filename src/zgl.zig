@@ -80,29 +80,29 @@ fn b2gl(b: bool) types.Boolean {
         binding.FALSE;
 }
 
-pub const DebugSource = enum {
-    api,
-    window_system,
-    shader_compiler,
-    third_party,
-    application,
-    other,
+pub const DebugSource = enum(types.Enum) {
+    api = binding.DEBUG_SOURCE_API,
+    window_system = binding.DEBUG_SOURCE_WINDOW_SYSTEM,
+    shader_compiler = binding.DEBUG_SOURCE_SHADER_COMPILER,
+    third_party = binding.DEBUG_SOURCE_THIRD_PARTY,
+    application = binding.DEBUG_SOURCE_APPLICATION,
+    other = binding.DEBUG_SOURCE_OTHER,
 };
 
-pub const DebugMessageType = enum {
-    @"error",
-    deprecated_behavior,
-    undefined_behavior,
-    portability,
-    performance,
-    other,
+pub const DebugMessageType = enum(types.Enum) {
+    @"error" = binding.DEBUG_TYPE_ERROR,
+    deprecated_behavior = binding.DEBUG_TYPE_DEPRECATED_BEHAVIOR,
+    undefined_behavior = binding.DEBUG_TYPE_UNDEFINED_BEHAVIOR,
+    portability = binding.DEBUG_TYPE_PORTABILITY,
+    performance = binding.DEBUG_TYPE_PERFORMANCE,
+    other = binding.DEBUG_TYPE_OTHER,
 };
 
-pub const DebugSeverity = enum {
-    high,
-    medium,
-    low,
-    notification,
+pub const DebugSeverity = enum(types.Enum) {
+    high = binding.DEBUG_SEVERITY_HIGH,
+    medium = binding.DEBUG_SEVERITY_MEDIUM,
+    low = binding.DEBUG_SEVERITY_LOW,
+    notification = binding.DEBUG_SEVERITY_NOTIFICATION,
 };
 
 fn DebugMessageCallbackHandler(comptime Context: type) type {
@@ -214,6 +214,18 @@ pub fn debugMessageCallback(context: anytype, comptime handler: DebugMessageCall
         binding.debugMessageCallback(H.callback, null)
     else
         binding.debugMessageCallback(H.callback, @as(?*const anyopaque, @ptrCast(context)));
+    checkError();
+}
+
+pub fn debugMessageInsert(source: DebugSource, msg_type: DebugMessageType, id: u32, severity: DebugSeverity, message: []const u8) void {
+    binding.debugMessageInsert(
+        @intFromEnum(source),
+        @intFromEnum(msg_type),
+        id,
+        @intFromEnum(severity),
+        @intCast(message.len),
+        message.ptr,
+    );
     checkError();
 }
 
@@ -929,6 +941,8 @@ pub const ProgramParameter = enum(types.Enum) {
     active_uniform_max_length = binding.ACTIVE_UNIFORM_MAX_LENGTH,
     compute_work_group_size = binding.COMPUTE_WORK_GROUP_SIZE,
     program_binary_length = binding.PROGRAM_BINARY_LENGTH,
+    program_binary_retrievable_hint = binding.PROGRAM_BINARY_RETRIEVABLE_HINT,
+    program_separable = binding.PROGRAM_SEPARABLE,
     transform_feedback_buffer_mode = binding.TRANSFORM_FEEDBACK_BUFFER_MODE,
     transform_feedback_varyings = binding.TRANSFORM_FEEDBACK_VARYINGS,
     transform_feedback_varying_max_length = binding.TRANSFORM_FEEDBACK_VARYING_MAX_LENGTH,
@@ -955,6 +969,11 @@ pub fn getProgramInfoLog(program: types.Program, allocator: std.mem.Allocator) !
     return log;
 }
 
+pub fn programParameter(program: types.Program, comptime parameter: ProgramParameter, value: types.Int) void {
+    binding.programParameteri(@intFromEnum(program), @intFromEnum(parameter), value);
+    checkError();
+}
+
 pub fn getUniformLocation(program: types.Program, name: [:0]const u8) ?u32 {
     const loc = binding.getUniformLocation(@intFromEnum(program), name.ptr);
     checkError();
@@ -977,6 +996,45 @@ pub fn bindAttribLocation(program: types.Program, attribute: u32, name: [:0]cons
 
 pub fn uniformBlockBinding(program: types.Program, index: u32, value: u32) void {
     binding.uniformBlockBinding(@intFromEnum(program), index, value);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Program pipelines
+
+pub fn genProgramPipeline() types.ProgramPipeline {
+    var pipeline_name: types.UInt = undefined;
+    binding.genProgramPipelines(1, &pipeline_name);
+    checkError();
+    return @enumFromInt(pipeline_name);
+}
+
+pub fn deleteProgramPipeline(pipeline: types.ProgramPipeline) void {
+    var id = @intFromEnum(pipeline);
+    binding.deleteProgramPipelines(1, &id);
+}
+
+pub fn bindProgramPipeline(pipeline: types.ProgramPipeline) void {
+    binding.bindProgramPipeline(@intFromEnum(pipeline));
+}
+
+pub const ProgramStagesFlags = packed struct {
+    vertex_shader: bool = false,
+    tess_control_shader: bool = false,
+    tess_evaluation_shader: bool = false,
+    geometry_shader: bool = false,
+    fragment_shader: bool = false,
+    compute_shader: bool = false,
+};
+
+pub fn useProgramStages(pipeline: types.ProgramPipeline, stages: ProgramStagesFlags, program: types.Program) void {
+    const mask = @as(types.BitField, if (stages.vertex_shader) binding.VERTEX_SHADER_BIT else 0) |
+        @as(types.BitField, if (stages.tess_control_shader) binding.TESS_CONTROL_SHADER_BIT else 0) |
+        @as(types.BitField, if (stages.tess_evaluation_shader) binding.TESS_EVALUATION_SHADER_BIT else 0) |
+        @as(types.BitField, if (stages.geometry_shader) binding.GEOMETRY_SHADER_BIT else 0) |
+        @as(types.BitField, if (stages.fragment_shader) binding.FRAGMENT_SHADER_BIT else 0) |
+        @as(types.BitField, if (stages.compute_shader) binding.COMPUTE_SHADER_BIT else 0);
+    binding.useProgramStages(@intFromEnum(pipeline), mask, @intFromEnum(program));
+    checkError();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1297,9 +1355,9 @@ pub fn drawArraysInstanced(primitiveType: PrimitiveType, first: usize, count: us
 }
 
 pub const ElementType = enum(types.Enum) {
-    u8 = binding.UNSIGNED_BYTE,
-    u16 = binding.UNSIGNED_SHORT,
-    u32 = binding.UNSIGNED_INT,
+    unsigned_byte = binding.UNSIGNED_BYTE,
+    unsigned_short = binding.UNSIGNED_SHORT,
+    unsigned_int = binding.UNSIGNED_INT,
 };
 
 pub fn drawElements(primitiveType: PrimitiveType, count: usize, element_type: ElementType, indices: usize) void {
@@ -1506,6 +1564,11 @@ pub const BlendFactor = enum(types.Enum) {
     one_minus_constant_color = binding.ONE_MINUS_CONSTANT_COLOR,
     constant_alpha = binding.CONSTANT_ALPHA,
     one_minus_constant_alpha = binding.ONE_MINUS_CONSTANT_ALPHA,
+    src_alpha_saturate = binding.SRC_ALPHA_SATURATE,
+    src1_color = binding.SRC1_COLOR,
+    one_minus_src1_color = binding.ONE_MINUS_SRC1_COLOR,
+    src1_alpha = binding.SRC1_ALPHA,
+    one_minus_src1_alpha = binding.ONE_MINUS_SRC1_ALPHA,
 };
 
 pub fn blendFunc(sfactor: BlendFactor, dfactor: BlendFactor) void {
@@ -1515,6 +1578,29 @@ pub fn blendFunc(sfactor: BlendFactor, dfactor: BlendFactor) void {
 
 pub fn blendFuncSeparate(srcRGB: BlendFactor, dstRGB: BlendFactor, srcAlpha: BlendFactor, dstAlpha: BlendFactor) void {
     binding.blendFuncSeparate(@intFromEnum(srcRGB), @intFromEnum(dstRGB), @intFromEnum(srcAlpha), @intFromEnum(dstAlpha));
+    checkError();
+}
+
+pub const BlendEquation = enum(types.Enum) {
+    add = binding.FUNC_ADD,
+    subtract = binding.FUNC_SUBTRACT,
+    reverse_subtract = binding.FUNC_REVERSE_SUBTRACT,
+    min = binding.MIN,
+    max = binding.MAX,
+};
+
+pub fn blendEquation(equation: BlendEquation) void {
+    binding.blendEquation(@intFromEnum(equation));
+    checkError();
+}
+
+pub fn blendEquationi(buf: u32, equation: BlendEquation) void {
+    binding.blendEquationi(buf, @intFromEnum(equation));
+    checkError();
+}
+
+pub fn blendEquationSeparate(equationRgb: BlendEquation, equationAlpha: BlendEquation) void {
+    binding.blendEquationSeparate(@intFromEnum(equationRgb), @intFromEnum(equationAlpha));
     checkError();
 }
 
@@ -1640,6 +1726,7 @@ pub const TextureParameter = enum(types.Enum) {
     swizzle_g = binding.TEXTURE_SWIZZLE_G,
     swizzle_b = binding.TEXTURE_SWIZZLE_B,
     swizzle_a = binding.TEXTURE_SWIZZLE_A,
+    swizzle_rgba = binding.TEXTURE_SWIZZLE_RGBA,
     wrap_s = binding.TEXTURE_WRAP_S,
     wrap_t = binding.TEXTURE_WRAP_T,
     wrap_r = binding.TEXTURE_WRAP_R,
@@ -1734,6 +1821,7 @@ pub const TextureInternalFormat = enum(types.Enum) {
     r3_g3_b2 = binding.R3_G3_B2,
     rgb4 = binding.RGB4,
     rgb5 = binding.RGB5,
+    rgb565 = binding.RGB565,
     rgb8 = binding.RGB8,
     rgb8_snorm = binding.RGB8_SNORM,
     rgb10 = binding.RGB10,
@@ -1888,6 +1976,19 @@ pub const PixelType = enum(types.Enum) {
     unsigned_int_10_10_10_2 = binding.UNSIGNED_INT_10_10_10_2,
     unsigned_int_2_10_10_10_rev = binding.UNSIGNED_INT_2_10_10_10_REV,
 };
+
+pub fn texBuffer(
+    texture_target: TextureTarget,
+    pixel_internal_format: TextureInternalFormat,
+    buffer: types.Buffer,
+) void {
+    binding.texBuffer(
+        @intFromEnum(texture_target),
+        @intFromEnum(pixel_internal_format),
+        @intFromEnum(buffer),
+    );
+    checkError();
+}
 
 pub fn textureImage2D(
     texture: TextureTarget,

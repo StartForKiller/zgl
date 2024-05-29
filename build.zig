@@ -61,15 +61,15 @@ pub fn build(b: *std.Build) !void {
         orelse return error.UnsupportedOpenGlVersion;
 
     const zgl = b.addModule("zgl", .{
-        .root_source_file = .{ .path = "src/zgl.zig" },
+        .root_source_file = b.path("src/zgl.zig"),
         .target = target,
         .optimize = optimize,
     });
     zgl.addAnonymousImport(
         "binding",
         .{
-            .root_source_file = .{
-                .path = b.fmt("src/bindings/GL_{s}VERSION_{d}_{d}.zig", .{
+            .root_source_file = b.path(
+                b.fmt("src/bindings/GL_{s}VERSION_{d}_{d}.zig", .{
                     if (selected_version.es)
                         "ES_"
                     else
@@ -77,7 +77,7 @@ pub fn build(b: *std.Build) !void {
                     selected_version.major,
                     selected_version.minor,
                 })
-            }
+            ),
         }
     );
 }
