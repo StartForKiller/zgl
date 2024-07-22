@@ -1,15 +1,12 @@
 const std = @import("std");
 
-
 pub const OpenGlVersion = struct {
     major: u32,
     minor: u32,
     es: bool,
 };
 
-pub const OpenGlVersionLookupTable = std.ComptimeStringMap
-(
-    OpenGlVersion,
+pub const OpenGlVersionLookupTable = std.StaticStringMap(OpenGlVersion).initComptime(
     .{
         .{ "ES_VERSION_1_0", .{ .major = 1, .minor = 0, .es = true } },
         .{ "ES_VERSION_2_0", .{ .major = 2, .minor = 0, .es = true } },
@@ -54,30 +51,23 @@ pub fn build(b: *std.Build) !void {
         []const u8,
         "binding_version",
         "Sets which version of OpenGL use wish to bind to. default=VERSION_4_5",
-    )
-        orelse "VERSION_4_5";
+    ) orelse "VERSION_4_5";
 
-    const selected_version = OpenGlVersionLookupTable.get(binding_version)
-        orelse return error.UnsupportedOpenGlVersion;
+    const selected_version = OpenGlVersionLookupTable.get(binding_version) orelse return error.UnsupportedOpenGlVersion;
 
     const zgl = b.addModule("zgl", .{
         .root_source_file = b.path("src/zgl.zig"),
         .target = target,
         .optimize = optimize,
     });
-    zgl.addAnonymousImport(
-        "binding",
-        .{
-            .root_source_file = b.path(
-                b.fmt("src/bindings/GL_{s}VERSION_{d}_{d}.zig", .{
-                    if (selected_version.es)
-                        "ES_"
-                    else
-                        "",
-                    selected_version.major,
-                    selected_version.minor,
-                })
-            ),
-        }
-    );
+    zgl.addAnonymousImport("binding", .{
+        .root_source_file = b.path(b.fmt("src/bindings/GL_{s}VERSION_{d}_{d}.zig", .{
+            if (selected_version.es)
+                "ES_"
+            else
+                "",
+            selected_version.major,
+            selected_version.minor,
+        })),
+    });
 }
